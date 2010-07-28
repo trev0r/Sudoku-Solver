@@ -1,15 +1,18 @@
 # Reads in a Sudoku puzzle and splits out the answer
-class Sudoku
-    #@rows, @columns, @boxes, @queue
-    def read 
+class Entry 
+    attr_reader :row, :col,  :value
+    @possibleValues
+    def initialize(r, c)
+        row = r
+        col = c
+        possibleVals = (1..9).to_a
+        value = nil
     end
 
-    def solve
+    def remove(x)
+        @possibleValues.remove(x)
+        @value = @possibleValues[0] if @possibleValues.length == 1
     end
-
-    def print
-    end
-
 
 end
 def getCol(a, x)
@@ -36,6 +39,14 @@ def getBox(a,x)
     end
     box
 end
+
+
+def check(entry, knownvalues)
+    knownvalues.each do |val|
+        entry.remove(val)
+    end
+end
+
 def sudokuPrint(a)
     for j in 1..9 do
         row = a[j-1]     
@@ -62,19 +73,31 @@ File.open("easy", "r") do |infile|
         column = 0
         line.each_char(){ |x|
             a[row][column] = x.to_i
-             if a[row][column] ==0
-                 a[row][column] = nil
-                 q << (1..).to_a
-             end
+            if a[row][column] ==0
+                a[row][column] = nil
+                q << Entry.new(row,column) 
+            end
             column+=1 
         }
         row+=1
     end
 end
 sudokuPrint(a)
-
-for row in 1..9 do
-    for col in 1..9 do
-
+puts q.length
+while (q.length  > 0)
+    entry = q.first
+    puts "#{entry.row},#{entry.col}"
+    row = getRow(a,entry.row)
+    check(entry, row)
+    col = getCol(a,entry.col)
+    check(entry, col)
+    box = getBox(a,entry.box)
+    check(entry, box)
+    unless entry.value.nil?
+        a[entry.row][entry.col] = entry.value 
+    else
+        q << entry
     end
+
+    sudokuPrint(a)
 end
