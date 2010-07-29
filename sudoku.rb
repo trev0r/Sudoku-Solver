@@ -12,7 +12,7 @@ class Entry
 
     def delete(x)
         @possibleValues.delete(x)
-        puts "#{@row},#{@col} (#{x}): #{@possibleValues}"
+       # puts "#{@row},#{@col} (#{x}): #{@possibleValues}"
         @value = @possibleValues[0] if @possibleValues.length == 1
     end
     def testPrint
@@ -80,25 +80,29 @@ end
 #replaced with arrays ranging from 1..9 to represent all possible values.
 a = []
 q = Array.new
-box = 0
 9.times { a << [] }
-File.open("easy", "r") do |infile|
+File.open("medium", "r") do |infile|
     row = 0
+    box = 0
     while(line = infile.gets)
         column = 0
+        box+=3 if row%3 == 0 && row != 0
         line.each_char(){ |x|
-            a[row][column] = x.to_i
-            if a[row][column] ==0
-                a[row][column] = nil
-                q << Entry.new(row,column,box) 
+            if column < 9
+                box+=1 if (column%3 == 0  && column != 0 && column < 9)
+                a[row][column] = x.to_i 
+                #puts "#{row},#{column}:#{box}"
+
+                if a[row][column] ==0
+                    a[row][column] = nil
+                    q << Entry.new(row,column,box) 
+                end
+                column+=1 
             end
-            box+=1 if column%3 == 0  && column != 0 && column < 9
-            #    puts "#{row},#{column}:#{box}"
-            column+=1 
         }
         box-=2 
         row+=1
-        box+=3 if row%3 == 0 && row != 0
+
     end
 end
 sudokuPrint(a)
@@ -107,15 +111,15 @@ while (q.length  > 0)
     entry = q.shift
     row = getRow(a,entry.row)
     check(entry, row)
-    print "Row: #{row}"
+    print "Row #{entry.row}: #{row}"
     puts
     col = getCol(a,entry.col)
     check(entry, col)
-    print "Col: #{col}"
+    print "Col #{entry.col}: #{col}"
     puts
     box = getBox(a,entry.box)
     check(entry, box)
-    print "Box: #{box}"
+    print "Box #{entry.box}: #{box}"
     puts
     unless entry.value.nil?
         a[entry.row][entry.col] = entry.value 
