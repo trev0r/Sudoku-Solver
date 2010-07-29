@@ -1,25 +1,31 @@
 # Reads in a Sudoku puzzle and splits out the answer
 class Entry 
-    attr_reader :row, :col,  :value
+    attr_reader :row, :col, :box,  :value
     @possibleValues
-    def initialize(r, c)
-        row = r
-        col = c
-        possibleVals = (1..9).to_a
-        value = nil
+    def initialize(r, c, b)
+        @row = r
+        @col = c
+        @box = b
+        @possibleValues = (1..9).to_a
+        @value = nil
     end
 
-    def remove(x)
-        @possibleValues.remove(x)
+    def delete(x)
+        @possibleValues.delete(x)
+        puts "#{@row},#{@col} (#{x}): #{@possibleValues}"
         @value = @possibleValues[0] if @possibleValues.length == 1
+    end
+    def testPrint
+        puts "#{@row},#{@col}"
     end
 
 end
 def getCol(a, x)
     col = []
     a.each do |item|
-        col << item[x] unless item.class == Array
+        col.push(item[x]) unless item[x].class == Array
     end
+
     col
 end
 def getRow(a,x)
@@ -34,16 +40,21 @@ def getBox(a,x)
     startRow = 3*(x/3)
     startCol = 3*(x%3)
 
-    a[startRow..startRow+2].each do |row|
-        box << row[startCol..startCol+2]
+    a[startRow,3].each do |row|
+        for i in startCol..startCol+2 do
+            box.push(row[i])
+        end
+        # print "boxrow #{row}\n"
+        # box.push(row[startCol,3])
     end
     box
 end
 
 
+
 def check(entry, knownvalues)
     knownvalues.each do |val|
-        entry.remove(val)
+        entry.delete(val) unless val.nil?
     end
 end
 
@@ -51,8 +62,11 @@ def sudokuPrint(a)
     for j in 1..9 do
         row = a[j-1]     
         for k in 1..9 do
-            print row[k-1]
-            print " " if row[k-1].nil?
+            if row[k-1].nil?
+                print " "
+            else
+                print row[k-1]
+            end
             print " | " if (k%3 == 0 && k != 9)
         end
         puts
@@ -66,6 +80,7 @@ end
 #replaced with arrays ranging from 1..9 to represent all possible values.
 a = []
 q = Array.new
+box = 0
 9.times { a << [] }
 File.open("easy", "r") do |infile|
     row = 0
@@ -75,29 +90,39 @@ File.open("easy", "r") do |infile|
             a[row][column] = x.to_i
             if a[row][column] ==0
                 a[row][column] = nil
-                q << Entry.new(row,column) 
+                q << Entry.new(row,column,box) 
             end
+            box+=1 if column%3 == 0  && column != 0 && column < 9
+            #    puts "#{row},#{column}:#{box}"
             column+=1 
         }
+        box-=2 
         row+=1
+        box+=3 if row%3 == 0 && row != 0
     end
 end
 sudokuPrint(a)
-puts q.length
+puts
 while (q.length  > 0)
-    entry = q.first
-    puts "#{entry.row},#{entry.col}"
+    entry = q.shift
     row = getRow(a,entry.row)
     check(entry, row)
+    print "Row: #{row}"
+    puts
     col = getCol(a,entry.col)
     check(entry, col)
+    print "Col: #{col}"
+    puts
     box = getBox(a,entry.box)
     check(entry, box)
+    print "Box: #{box}"
+    puts
     unless entry.value.nil?
         a[entry.row][entry.col] = entry.value 
     else
-        q << entry
+        q.push(entry)# << entry
     end
 
     sudokuPrint(a)
+    puts
 end
