@@ -22,25 +22,48 @@ p peers['A1']
 def parse_grid(grid)
     grid = grid.inject([]){|result,element| result << element if '0.-123456789'.include?(element)}
     values = Hash[squares.collect{|s| [s,digits]}]
-    
+    squares.zip(grid){|s,d|
+        return false if digits.include?(d) && !assign(values,s,d) }
+        return values
+end
 
-def sudokuPrint(a)
-    for j in 1..9 do
-        row = a[j-1]     
-        for k in 1..9 do
-            if row[k-1].nil?
-                print " "
-            else
-                print row[k-1]
-            end
-            print " | " if (k%3 == 0 && k != 9)
-        end
-        puts
-        if j%3 == 0 && j != 9
-            15.times { print "-" }
-            puts
-        end
+def assign(values,s,d)
+    #Eliminate all the other values (except d) from values[s], propogate
+    return values  if values[s].all?{|d2| eliminate(values,s,d2) if d2 != d}
+    return false
+end
+
+def eliminate(values, s, d)
+    #Eliminate d from values[s]; propogate when value or places <= 2
+    return values if !values[s].include?(d) #Already eliminated
+    values[s].delete(d2)
+    if values[s].empty? #Contradiction: removed last value
+        return false 
+    elsif values[s].length == 1
+        #only one value left, remove from peers
+        d2 = values[2].first
+        return false if !peers[s].all?{|s2| elimiante(values,s2,d2)}
     end
+    ## check the places where d appears in the units of s
+    units[s].each{|u|
+        dplaces = u.inject([]){|result,element| result << elemement if values[s].include?(d)}
+        return false if dplaces.empty?
+        if(dplaces.length == 1)
+            #d can only be in one place in the unit, assign there
+            return false if !assign(values,dplaces.first, d)
+        end
+    }      
+    return values
+end
+
+
+
+def printboard(values)
+    width = 1+squares.max{|a,b| values[a].length <=> values[b].length}.length
+    line = "\n"+3.times.inject([]){|result| result << "-"*3*width}.join("+")   
+    rows.each{|r|
+        col.each{|c|
+                print values[r+c].center(width)+ ("36".include?(c) ? "|":"") + ("CF".include?(r) ? "line" : '')
 end
 #Reads in a sudoku file and converts it into a 9x9 matrix of values. Unknown values (represented by 0 in the file) are
 #replaced with arrays ranging from 1..9 to represent all possible values.
