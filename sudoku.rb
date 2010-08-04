@@ -8,8 +8,8 @@ end
 @digits = '123456789'
 
 @squares = cross(@rows,@cols).flatten
-@unitlist = @cols.collect{|c| cross(@rows,c).flatten} +
-    @rows.collect{|r| cross(r,@cols).flatten} 
+@unitlist = @cols.collect{|c| cross(@rows,[c]).flatten} +
+    @rows.collect{|r| cross([r],@cols).flatten} 
 @rows.each_slice(3){|rs| @cols.each_slice(3){|cs| @unitlist.concat([cross(rs,cs).flatten])}}
 
 @units = Hash[@squares.collect{|sqr| [sqr, @unitlist.select{|x| x.include?(sqr)}]}]
@@ -45,32 +45,28 @@ def assign(values,s,d)
 end
 def eliminate(values, s, d) 
     #Eliminate d from values[s]; propogate when value or places <= 2
-    return values if !values[s].include?(d) #Already eliminated
-   # puts "Eliminating #{d} from #{values[s].inspect} in #{s}"
-
+    return values unless values[s].include?(d) #Already eliminated
+    # puts "Eliminating #{d} from #{values[s].inspect} in #{s}"
     values[s].delete!(d)
     #printboard(values)
     if values[s].empty? #Contradiction: removed last value
         return false 
     elsif values[s].length == 1
         #only one value left, remove from peers
-        d2 = values[s].first
+        d2 = values[s]
         return false unless (Array.new(@peers[s])).all?{|s2| eliminate(values,s2,d2)}
     end
     ## check the places where d appears in the units of s
     @units[s].each{|u|
         dplaces = u.inject([]){|result,element| values[element].include?(d) ? result << element : result } 
         return false if dplaces.empty?
-        if(dplaces.length == 1)
-            #d can only be in one place in the unit, assign there
+        if(dplaces.length == 1) #d can only be in one place in the unit, assign there
             return false if !assign(values,dplaces.first, d)
         end
     }      
     return values
 
 end
-
-
 
 def printboard(values)
     width = 1+values[@squares.max{|a,b| values[a].length <=> values[b].length}].length
@@ -79,30 +75,22 @@ def printboard(values)
         @cols.each{|c|
             print values[r+c].center(width)+ ("36".include?(c) ? "|":"")        
         }
-        puts ("CF".include?(r) ? line : '')
-
+        puts ("CF".include?(r) ? line : '') 
     }
     puts
 end
-def search(values, level)
-    level += 1 
-    printboard(values) if values != false
-   # puts "Testing on: #{values.inspect}"
+
+def search(values) 
     return false unless values #already failed
     return values if @squares.all?{|s| values[s].length == 1} #solves
     s = @squares.clone.delete_if{|x| values[x].length <= 1}.min{|a,b| values[a].length <=> values[b].length}
-    p values[s]
-    test = Array.new(values[s].split(//)).collect{|d|
-        print "#{level} searching #{d} in #{s} of #{values[s].length} options\n" 
-        printboard(values)
-        clonez = values.clone
-      search(assign(clonez,s,d),level)
-         
+    test = values[s].split(//).collect{|d|
+        x = search(assign(Marshal::load(Marshal::dump(values)),s,d)) 
     }
-    puts "Array #{test.inspect }"
+    test = test.select{|t| t != false}.first
+    test.nil? ? false : test 
 end
-printboard(parse_grid(grid))
-printboard(search(parse_grid(grid),0))
+printboard(search(parse_grid(grid)))
 #Reads in a sudoku file and converts it into a 9x9 matrix of values. Unknown values (represented by 0 in the file) are
 #replaced with arrays ranging from 1..9 to represent all possible values.
 #a = []
