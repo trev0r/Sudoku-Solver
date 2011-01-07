@@ -30,7 +30,7 @@ end
 @rows.each_slice(3){|rs| @cols.each_slice(3){|cs| @unitlist.concat([cross(rs,cs).flatten])}}
 
 @units = Hash[@squares.collect{|s| [s, @unitlist.select{|u| u.include?(s)}]}]
-@peers = Hash[@units.keys.collect{|u| [u, @units[u].flatten.uniq!.select{|s2| s2 != s}]}]
+@peers = Hash[@units.keys.collect{|u| [u, @units[u].flatten.uniq!.select{|s2| s2 != u}]}]
 
 def parse_grid(grid)
     grid = grid.inject([]){|result,element| result << element if '0.-123456789'.include?(element)}
